@@ -1,46 +1,57 @@
-name: Vault Deploy
+name: Deploy Vault
 
 on:
   push:
     branches:
-      - main 
+      - main
   pull_request:
     branches:
       - main
 
 jobs:
-  terraform:
+  deploy:
     runs-on: ubuntu-latest
 
-      # Replace with your desired Terraform version something
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-    - name: Update kubeconfig
-      run: aws eks update-kubeconfig --region us-east-1 --name education-eks-RRerXwEQ
+      - name: Install kubectl and kubens
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x ./kubectl
+          sudo mv ./kubectl /usr/local/bin/kubectl
 
-    - name: install kubectl
-      run: |
+          curl -LO https://raw.githubusercontent.com/ahmetb/kubectx/master/kubens
+          chmod +x kubens
+          sudo mv kubens /usr/local/bin/
 
-    - name: create ns
-      run: kubectl create ns vault
+      - name: Install Helm
+        run: |
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+          chmod +x get_helm.sh
+          sudo ./get_helm.sh
 
-    - name: Install Helm
-      run: |
-        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
-        chmod +x get_helm.sh
-        ./get_helm.sh
+      - name: Update kubeconfig
+        run: aws eks --region us-east-1 update-kubeconfig --name education-eks-RRerXwEQ
 
-    - name: Deploy Helm Chart
-      run: |
-       helm repo add hashicorp https://helm.releases.hashicorp.com
-       helm install my-vault hashicorp/vault --version 0.27.0
+      - name: Verify kubeconfig
+        run: kubectl get nodes
+
+      - name: Create Namespace
+        run: kubectl create ns vault
+
+      - name: change to namespace
+        run: kubens vault
+
+      - name: Deploy vault
+        run: |
+         helm repo add hashicorp https://helm.releases.hashicorp.com
+         helm install my-vault hashicorp/vault --version 0.27.0
