@@ -32,7 +32,7 @@ jobs:
       run: |
 
     - name: create ns
-      run: kubectl create ns grafana
+      run: kubectl create ns vault
 
     - name: Install Helm
       run: |
