@@ -32,8 +32,8 @@ jobs:
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
-    - name: Create Namespace
-      run: kubectl create ns vault
+    # - name: Create Namespace
+    #   run: kubectl create ns vault
 
     - name: Install Helm
       run: |
@@ -57,5 +57,5 @@ jobs:
     - name: Deploy Helm Chart
       run: |
         helm repo add hashicorp https://helm.releases.hashicorp.com
-        helm install my-vault hashicorp/vault --version 0.27.0 -n vault
-        # helm upgrade my-vault hashicorp/vault -f values.yaml -f values-dev.yaml -n vault
+        # helm install my-vault hashicorp/vault --version 0.27.0 -n vault
+        helm upgrade my-vault hashicorp/vault -f values.yaml -f values-dev.yaml -n vault
